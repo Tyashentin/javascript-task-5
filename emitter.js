@@ -1,10 +1,6 @@
 'use strict';
 
-/**
- * Сделано задание на звездочку
- * Реализованы методы several и through
- */
-getEmitter.isStar = true;
+getEmitter.isStar = false;
 module.exports = getEmitter;
 
 /**
@@ -12,6 +8,8 @@ module.exports = getEmitter;
  * @returns {Object}
  */
 function getEmitter() {
+    let events = {};
+
     return {
 
         /**
@@ -19,50 +17,55 @@ function getEmitter() {
          * @param {String} event
          * @param {Object} context
          * @param {Function} handler
+         * @returns {Object}
          */
         on: function (event, context, handler) {
-            console.info(event, context, handler);
+            if (!(event in events)) {
+                events[event] = [];
+            }
+            events[event].push({
+                context,
+                handler
+            });
+
+            return this;
         },
 
         /**
          * Отписаться от события
          * @param {String} event
          * @param {Object} context
+         * @returns {Object}
          */
         off: function (event, context) {
-            console.info(event, context);
+            for (let element in events) {
+                if (element.startsWith(event + '.') || element === event) {
+                    events[element] = events[element]
+                        .filter(item => item.context !== context);
+                }
+            }
+
+            return this;
         },
 
         /**
          * Уведомить о событии
          * @param {String} event
+         * @returns {Object}
          */
         emit: function (event) {
-            console.info(event);
-        },
+            let elements = event.split('.');
+            while (elements.length) {
+                let newEvent = elements.join('.');
+                if (newEvent in events) {
+                    events[newEvent]
+                        .forEach(item => item.handler.call(item.context));
+                }
+                elements.pop();
+            }
 
-        /**
-         * Подписаться на событие с ограничением по количеству полученных уведомлений
-         * @star
-         * @param {String} event
-         * @param {Object} context
-         * @param {Function} handler
-         * @param {Number} times – сколько раз получить уведомление
-         */
-        several: function (event, context, handler, times) {
-            console.info(event, context, handler, times);
-        },
-
-        /**
-         * Подписаться на событие с ограничением по частоте получения уведомлений
-         * @star
-         * @param {String} event
-         * @param {Object} context
-         * @param {Function} handler
-         * @param {Number} frequency – как часто уведомлять
-         */
-        through: function (event, context, handler, frequency) {
-            console.info(event, context, handler, frequency);
+            return this;
         }
     };
 }
+
